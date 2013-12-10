@@ -1,0 +1,104 @@
+#!/bin/bash
+
+#: Title       : nodefree.sh
+#: Date Created: Tue Aug  2 17:35:57 CEST 2011
+#: Last Edit   : Wed Nov 27 18:07:58 CET 2013
+#: Author      : Deni Bacic, Matej Repic {deni.bacic,matej.repic}@ki.si
+#: Version     : 0.3 ALPHA 
+
+# Add "/net/a1/homes/stuff" to your PATH variable in .bashrc, .zshrc,...
+
+
+#: Version 0.3, 
+#: Wed Nov 27 18:10:33 CET 2013
+#:      - bugfix, if username is longer than 5 chars, UID is printed, 
+#:        set ps output user column width to 15 chars
+#:      - first check hostname if == a1, then if the group exists
+
+
+
+USED=0
+FAIL=0
+FREE=0
+FREE_LIST=" "
+DOWN_LIST=" "
+WIDTH=$(tput cols)
+
+# Barve za output
+C_GREEN="\E[1;32m"
+C_YELLOW="\E[1;33m"
+C_RED="\E[1;31m"
+C_DEFAULT="\E[0;00m"
+
+HOST=$(hostname -s)
+if [ "$HOST" == "a1" ]; then
+
+    if [ $# -ne 1 ]; then
+            GROUP=l01
+    else
+            GROUP=$1
+    fi
+
+
+    if [ ! -f /etc/dsh/group/$GROUP ]; then
+        echo "Group '$GROUP' not found!"
+        exit 0
+    fi
+
+    echo "MACHINE GROUP: $GROUP"
+
+
+
+    printf "${C_DEFAULT}%${WIDTH}s\n"|tr ' ' '-'
+    echo -e " NODE\tSTATUS\t LOAD (1, 5, 15 min)\t TOP USER\tCORE#\tCPU MODEL\tDISK"
+    printf "%${WIDTH}s\n"|tr ' ' '-'
+    printf "Loading..."
+
+    DATA=$(dsh -Mc -g "$GROUP" 'echo -e $(uptime | cut -d"g" -f2 | cut -d" " -f2,3,4) ":"$(ps ax -o user:15=,pcpu= --sort pcpu | tail -1 | cut -d" " -f1)":"$(grep -c ^processor /proc/cpuinfo)":"$(grep -m 1 "model name" /proc/cpuinfo | cut -d":" -f2):"$(df -lhH | grep -P "/$" | tr -s " " | cut -d" " -f5)" ' 2>&1 | sort -k1.1,1.1 -k1.2,1n )
+else
+    printf "ERROR: Please use nodefree on a1!\n"
+
+    exit 1
+fi
+#echo "$DATA"
+
+printf "\r          \r" #delete LOADING
+
+while read -r line; do
+    if [[ "$line" == *"No route"* ]]; then
+        NODE=$(echo $line | cut -d":" -f1)
+            echo -e " $NODE\t[DOWN]"
+        DOWN_LIST=$DOWN_LIST" "$NODE 
+            let FAIL=$FAIL+1
+    else
+        NODE=$(echo $line | cut -d":" -f1)  
+        CPU=$(echo "$line" | cut -d":" -f2 | sed 's/ //g')
+        USER=$(echo "$line" | cut -d":" -f3)
+        LOAD=$(echo $line | cut -d":" -f2 | cut -d"." -f1  | cut -d" " -f2)
+            CPU_N=$(echo $line | cut -d":" -f4)
+        MODEL=$(echo $line | cut -d":" -f5 | sed 's/ //g' | sed 's/Opteron(tm)Processor/-/g' | sed 's/(R)Xeon(R)CPU/-/g' | cut -d"@" -f1)
+        DISK=$(echo $line | cut -d":" -f6)
+            if [ $LOAD -ge 1 ]
+            then
+                    #STATUS=${C_RED}USED${C_DEFAULT}
+            #STATUS=USED
+                    let USED=$USED+1
+                printf "%-7s [\E[1;31mUSED\E[0;00m]   %-20s     %-15s %-2s    %-15s %-4s\n" $NODE $CPU $USER $CPU_N $MODEL $DISK
+            else
+                    #STATUS=${C_GREEN}FREE${C_DEFAULT}
+            #STATUS=FREE
+                    FREE_LIST=$FREE_LIST" "$NODE
+                    let FREE=$FREE+1
+                printf "%-7s [\E[1;32mFREE\E[0;00m]   %-20s     %-15s %-2s    %-15s %-4s\n" $NODE $CPU $USER $CPU_N $MODEL $DISK
+            fi
+        
+    fi
+done <<< "$DATA"
+
+#printf "\e[32m Hello World"
+printf "%${WIDTH}s\n"|tr ' ' '-'
+echo -e "${C_RED} USED\t$USED${C_DEFAULT}"
+echo -e "${C_GREEN} FREE\t$FREE\t$FREE_LIST${C_DEFAULT}"
+echo -e " DOWN\t$FAIL\t$DOWN_LIST${C_DEFAULT}"
+printf "%${WIDTH}s\n\n"|tr ' ' '-'
+
