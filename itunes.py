@@ -40,8 +40,10 @@ def mpcnp():
 
         percent = (float(current_time)/float(time))*100
 
-        np = 'np: '+artist+' - '+track+' ~ ('+album+') @ '+progressBar(percent)
-
+        np = u"\u2669"+' '+artist+' - '+track+' ~ ('+album+') @ '+progressBar(percent)
+        # notes in unicode 2669 quarter, 266A eighth, 266B beamed eighth, 266C beamed sixteenth
+        # 1D11E G CLEF
+        # 1F3B5 emoji note
 
     print(np)
 

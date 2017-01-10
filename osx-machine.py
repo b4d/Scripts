@@ -13,25 +13,27 @@ import os
 def compinfo():
 
     # user@host
-    u = commands.getoutput('whoami')
+    #iu = commands.getoutput('whoami')
     h = commands.getoutput('hostname').split('.')[0]
-    uh = u+'@'+h
+    #uh = u+'@'+h
 
     # Proc
-    model = commands.getoutput('system_profiler SPHardwareDataType | grep "Processor Name"').split(':')[1].lstrip()
-    clock = commands.getoutput('system_profiler SPHardwareDataType | grep "Processor Speed"').split(':')[1].lstrip().replace(" ", "")
+    #model = commands.getoutput('system_profiler SPHardwareDataType | grep "Processor Name"').split(':')[1].lstrip()
+    #clock = commands.getoutput('system_profiler SPHardwareDataType | grep "Processor Speed"').split(':')[1].lstrip().replace(" ", "")
 
-    cpuinfo = model+' '+clock
+    #cpuinfo = model+' '+clock
+    cpuinfo = commands.getoutput('sysctl -n machdep.cpu.brand_string')
 
     # uptime
-    up = commands.getoutput("uptime")
-    splitit = string.split(up)
-    if splitit[3] == 'days,' or splitit[3] == 'day,':
-        uptime = splitit[2]+' '+splitit[3]+' '+splitit[4][0:-1]+' hours'
-    elif splitit[3] == 'min,':
-        uptime = splitit[2]+'  minutes'
-    else:
-        uptime = splitit[2][0:-1]+' hours'
+    #up = commands.getoutput("uptime")
+    #splitit = string.split(up)
+    #if splitit[3] == 'days,' or splitit[3] == 'day,':
+    #    uptime = splitit[2]+' '+splitit[3]+' '+splitit[4][0:-1]+' hours'
+    #elif splitit[3] == 'min,':
+    #    uptime = splitit[2]+'  minutes'
+    #else:
+    #    uptime = splitit[2][0:-1]+' hours'
+    uptime = commands.getoutput("echo `uptime` | awk '{ print $3 " " $4 }'")
 
     # Distro
     distro = "MacOSX"
@@ -47,7 +49,7 @@ def compinfo():
 
 
     #client info
-    client = commands.getoutput("irssi -v")
+    #client = commands.getoutput("irssi -v")
     
     #print output
     print h+" | "+distro+" "+ver+" | "+cpuinfo+" | "+memory+" | "+storage+" "+medium+" | Up: "+uptime
