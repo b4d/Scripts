@@ -29,15 +29,15 @@ def progressBar(percent):
 
 
 def ratingStars(rating):
-    if rating == 20:
+    if rating == '20':
         return "[★☆☆☆☆]"
-    elif rating == 40:
+    elif rating == '40':
         return "[★★☆☆☆]"
-    elif rating == 60:
+    elif rating == '60':
         return "[★★★☆☆]"
-    elif rating == 80:
+    elif rating == '80':
         return "[★★★★☆]"
-    elif rating == 100:
+    elif rating == '100':
         return "[★★★★★]"
     else:
         return " "
